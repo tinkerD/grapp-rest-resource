@@ -4,19 +4,19 @@ Copyright (c) 2014-2015 Dirk Grappendorf, www.grappendorf.net. All rights reserv
 This code may only be used under the MIT style license found in the file LICENSE.txt.
 
 Element: grapp-rest-resource
-Version: 0.0.7
+Version: 0.0.10
 Description: A web component that encapsulates REST API calls
 -->
 
 
-<link href="../core-ajax/core-xhr.html" rel="import">
+<link href="../iron-ajax/iron-request.html" rel="import">
 
 <polymer-element name="grapp-rest-resource"
-  attributes="url params resource indexUrl showUrl newUrl createUrl updateUrl deleteUrl memberUrl headers">
+  attributes="url params resource indexUrl showUrl newUrl createUrl updateUrl destroyUrl memberUrl headers token">
 
   <template>
 
-    <core-xhr id="xhr"></core-xhr>
+    <iron-request id="xhr"></iron-request>
 
   </template>
 
@@ -51,7 +51,8 @@ Description: A web component that encapsulates REST API calls
     return url;
   };
 
-  Polymer('grapp-rest-resource', {
+  Polymer({
+    is : 'grapp-rest-resource',
     created: function() {
       var self;
       this.headers = {};
@@ -122,6 +123,8 @@ Description: A web component that encapsulates REST API calls
               json = (data.trim() !== '' ? JSON.parse(data) : {});
               switch (response.status) {
                 case 200:
+                case 201:
+                case 204:
                   return typeof success === "function" ? success(json) : void 0;
                 case 401:
                   return self.fire('grapp-authentication-error');
@@ -142,6 +145,8 @@ Description: A web component that encapsulates REST API calls
               json = (data.trim() !== '' ? JSON.parse(data) : {});
               switch (response.status) {
                 case 200:
+                case 201:
+                case 204:
                   return typeof success === "function" ? success(json) : void 0;
                 case 401:
                   return self.fire('grapp-authentication-error');
@@ -151,10 +156,10 @@ Description: A web component that encapsulates REST API calls
             }
           });
         },
-        "delete": function(id, success, error) {
+        destroy: function(id, success, error) {
           return self.$.xhr.request({
             method: 'DELETE',
-            url: prepareUrl(self.deleteUrl || self.url, self.params, id),
+            url: prepareUrl(self.destroyUrl || self.url, self.params, id),
             headers: self.prepareHeaders(),
             callback: function(data, response) {
               var json;
@@ -198,6 +203,9 @@ Description: A web component that encapsulates REST API calls
       for (key in _ref) {
         val = _ref[key];
         h[key] = val;
+      }
+      if (this.token) {
+        h['Authorization'] = this.token;
       }
       return h;
     }
